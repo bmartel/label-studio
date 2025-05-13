@@ -1,6 +1,5 @@
 import { configure } from "mobx";
-import { destroy } from "mobx-state-tree";
-import { render, unmountComponentAtNode } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { toCamelCase } from "strman";
 
 import { LabelStudio as LabelStudioReact } from "./Component";
@@ -11,8 +10,6 @@ import { Hotkey } from "./core/Hotkey";
 import defaultOptions from "./defaultOptions";
 import { destroy as destroySharedStore } from "./mixins/SharedChoiceStore/mixin";
 import { EventInvoker } from "./utils/events";
-import { FF_LSDV_4620_3_ML, isFF } from "./utils/feature-flags";
-import { cleanDomAfterReact, findReactKey } from "./utils/reactCleaner";
 import { isDefined } from "./utils/utilities";
 
 declare global {
@@ -35,10 +32,13 @@ type LSFTask = any;
 // but it's not types yet, so here is some excerpt of its params
 type LSFOptions = Record<string, any> & {
   interfaces: string[];
-  keymap: Keymap;
-  user: LSFUser;
-  users: LSFUser[];
-  task: LSFTask;
+  keymap?: any;
+  user?: LSFUser;
+  users?: LSFUser[];
+  task?: LSFTask;
+  settings?: {
+    forceBottomPanel?: boolean;
+  };
 };
 
 export class LabelStudio {
@@ -54,6 +54,7 @@ export class LabelStudio {
   options: Partial<LSFOptions>;
   root: Element | string;
   store: any;
+  reactRoot: any;
 
   destroy: (() => void) | null = () => {};
   events = new EventInvoker();
@@ -109,34 +110,36 @@ export class LabelStudio {
     this.store = store;
     window.Htx = this.store;
 
-    const isRendered = false;
+    let isRendered = false;
+    let renderTimeout: number | null = null;
 
     const renderApp = () => {
       if (isRendered) {
         clearRenderedApp();
       }
-      render(<App store={this.store} />, rootElement);
+      renderTimeout = setTimeout(() => {
+        // Create new root for React 18
+        this.reactRoot = createRoot(rootElement);
+        const AppComponent = App as any;
+        this.reactRoot.render(<AppComponent store={this.store} />);
+        isRendered = true;
+      });
     };
 
     const clearRenderedApp = () => {
-      if (!rootElement.childNodes?.length) return;
-
-      const childNodes = [...rootElement.childNodes];
-      // cleanDomAfterReact needs this key to be sure that cleaning affects only current react subtree
-      const reactKey = findReactKey(childNodes[0]);
-
-      unmountComponentAtNode(rootElement);
-      /*
-        Unmounting doesn't help with clearing React's fibers
-        but removing the manually helps
-        @see https://github.com/facebook/react/pull/20290 (similar problem)
-        That's maybe not relevant in version 18
-       */
-      cleanDomAfterReact(childNodes, reactKey);
-      cleanDomAfterReact([rootElement], reactKey);
+      if (renderTimeout) {
+        clearTimeout(renderTimeout);
+        renderTimeout = null;
+      }
+      if (this.reactRoot && isRendered) {
+        this.reactRoot.unmount();
+        this.reactRoot = null;
+        isRendered = false;
+      }
     };
 
     renderApp();
+
     store.setAppControls({
       isRendered() {
         return isRendered;
@@ -146,28 +149,22 @@ export class LabelStudio {
     });
 
     this.destroy = () => {
-      if (isFF(FF_LSDV_4620_3_ML)) {
-        clearRenderedApp();
-      }
+      // Clear rendered app
+      clearRenderedApp();
+
+      // Destroy shared store
       destroySharedStore();
-      if (isFF(FF_LSDV_4620_3_ML)) {
-        /*
-           It seems that destroying children separately helps GC to collect garbage
-           ...
-         */
-        this.store.selfDestroy();
-      }
-      destroy(this.store);
+
+      // Unbind all hotkeys
       Hotkey.unbindAll();
-      if (isFF(FF_LSDV_4620_3_ML)) {
-        /*
-            ...
-            as well as nulling all these this.store
-         */
-        this.store = null;
-        this.destroy = null;
-        LabelStudio.instances.delete(this);
-      }
+
+      // Clear references
+      this.store = null;
+      window.Htx = null;
+      this.destroy = null;
+
+      // Remove from instances set
+      LabelStudio.instances.delete(this);
     };
   }
 

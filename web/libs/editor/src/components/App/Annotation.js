@@ -6,9 +6,10 @@ export function Annotation({ annotation, root }) {
   useLayoutEffect(() => {
     return () => {
       if (annotation && isAlive(annotation)) {
-        annotation.resetReady();
+        annotation.cleanup();
       }
     };
-  }, [annotation.pk, annotation.id]);
+  }, [annotation?.pk, annotation?.id]);
+
   return root ? Tree.renderItem(root, annotation) : null;
 }
