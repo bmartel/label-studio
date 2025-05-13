@@ -4,7 +4,7 @@ description: Setup frontend environment with optimized caching
 inputs:
   node-version:
     description: node version
-    default: "18"
+    default: "22"
     required: false
   yarn-version:
     description: yarn version
@@ -23,6 +23,7 @@ runs:
       with:
         node-version: "${{ inputs.node-version }}"
         cache: 'yarn'
+        cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
 
     - name: Upgrade Yarn
       env:
