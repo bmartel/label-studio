@@ -37,10 +37,12 @@ runs:
     - name: Get NX cache directory path
       id: nx-cache-path
       shell: bash
+      working-directory: ${{ inputs.directory }}
       run: echo "path=$(yarn nx show projects --json | jq -r '.[]' | sort | jq -R -s -c 'split("\n")[:-1]' | xargs yarn nx show project-graph --file=graph.json && echo "$(pwd)/.nx/cache")" >> $GITHUB_OUTPUT
 
     - name: Configure NX cache
       uses: actions/cache@v4
+      working-directory: ${{ inputs.directory }}
       with:
         path: ${{ steps.nx-cache-path.outputs.path }}
         key: ${{ inputs.nx-cache-key }}-${{ hashFiles('**/yarn.lock') }}

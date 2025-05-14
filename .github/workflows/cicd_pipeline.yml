@@ -151,8 +151,7 @@ jobs:
   biome:
     name: "Linter"
     needs:
-      - changed_files
-    if: needs.changed_files.outputs.frontend == 'true'
+      - install-frontend
     uses: ./.github/workflows/biome.yml
     with:
       head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
@@ -160,8 +159,7 @@ jobs:
   stylelint:
     name: "Linter"
     needs:
-      - changed_files
-    if: needs.changed_files.outputs.frontend == 'true'
+      - install-frontend
     uses: ./.github/workflows/stylelint.yml
     with:
       head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
