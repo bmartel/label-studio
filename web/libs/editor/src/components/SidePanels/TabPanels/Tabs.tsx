@@ -1,12 +1,11 @@
 import { useRef, useState } from "react";
-import { IconOutlinerDrag, IconCollapseSmall, IconExpandSmall } from "@humansignal/ui";
+import { IconOutlinerDrag } from "@humansignal/ui";
 import { useDrag } from "../../../hooks/useDrag";
 import { Block, Elem } from "../../../utils/bem";
 import { DEFAULT_PANEL_HEIGHT } from "../constants";
 import "./Tabs.scss";
 import { type BaseProps, Side, type TabProps } from "./types";
 import { determineDroppableArea, determineLeftOrRight } from "./utils";
-import { Button } from "libs/editor/src/common/Button/Button";
 
 const classAddedTabs: (Element | undefined)[] = [];
 
@@ -190,15 +189,7 @@ const Tab = ({
   );
 };
 
-export const Tabs = (
-  props: BaseProps & {
-    isBottomPanel?: boolean;
-    bottomCollapsed?: boolean;
-    setBottomCollapsed?: (v: boolean) => void;
-    settings?: any;
-    panelHeight?: number;
-  },
-) => {
+export const Tabs = (props: BaseProps) => {
   const ActiveComponent = props.locked
     ? props.panelViews[props.breakPointActiveTab].component
     : props.panelViews?.find((view) => view.active)?.component;
@@ -238,38 +229,9 @@ export const Tabs = (
             );
           })}
           <Elem id={`${props.name}_${props.panelViews.length}-droppable-space`} name="drop-space-after" />
-          {props.isBottomPanel && props.settings?.collapsibleBottomPanel && (
-            <Button
-              className="collapsible-bottom-panel-toggle"
-              // TODO: remove inline styles and use tailwind classes when Button component is updated
-              style={{
-                marginLeft: 4,
-                marginRight: 5,
-                marginTop: 4,
-                display: "flex",
-                height: "24px",
-                width: "24px",
-                padding: 0,
-                alignItems: "center",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-              }}
-              onClick={() => props.setBottomCollapsed?.(!props.bottomCollapsed)}
-              title={props.bottomCollapsed ? "Expand Bottom Panel" : "Collapse Bottom Panel"}
-            >
-              {props.bottomCollapsed ? <IconExpandSmall /> : <IconCollapseSmall />}
-            </Button>
-          )}
         </Elem>
-        {!props.bottomCollapsed && (
-          <Elem name="contents" style={{ overflow: "auto" }}>
-            {ActiveComponent && <ActiveComponent {...props} />}
-          </Elem>
-        )}
+        <Elem name="contents">{ActiveComponent && <ActiveComponent {...props} />}</Elem>
       </Block>
     </>
   );
 };
-
-Tabs.displayName = "Tabs";

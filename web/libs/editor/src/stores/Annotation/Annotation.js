@@ -942,10 +942,7 @@ const _Annotation = types
       const objectTag = self.names.get(object.name ?? object);
 
       const result = {
-        // @todo we should be validating this upstream before getting to this point
-        // otherwise a user would be creating a result that is invalid or erroring like it was previously
-        // but doing so silently and not showing any feedback to the user
-        from_name: control.name ? self.names.get(control.name) : "",
+        from_name: self.names.get(control.name),
         // @todo should stick to area
         to_name: objectTag,
         type: control.resultType,
@@ -1047,7 +1044,7 @@ const _Annotation = types
         const tagNames = self.names;
 
         // Clear non-existent labels
-        if (obj.type?.endsWith("labels")) {
+        if (obj.type.endsWith("labels")) {
           const keys = Object.keys(obj.value);
 
           for (const key of keys) {
@@ -1410,13 +1407,6 @@ const _Annotation = types
     resetReady() {
       self.objects.forEach((object) => object.setReady && object.setReady(false));
       self.areas.forEach((area) => area.setReady && area.setReady(false));
-    },
-
-    cleanup() {
-      self.resetReady();
-      if (self.disposers) self.disposers.forEach((d) => d());
-      if (self.regions) self.regions.forEach((r) => isAlive(r) && destroy(r));
-      if (self.relations) self.relations.forEach((r) => isAlive(r) && destroy(r));
     },
   }));
 

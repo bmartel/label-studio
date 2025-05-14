@@ -1,13 +1,4 @@
-import {
-  type FC,
-  type MouseEvent as RMouseEvent,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-  useEffect,
-} from "react";
+import { type FC, type MouseEvent as RMouseEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Block, Elem } from "../../../utils/bem";
 import {
   IconChevronLeft,
@@ -19,26 +10,15 @@ import {
 import { useDrag } from "../../../hooks/useDrag";
 import { clamp, isDefined } from "../../../utils/utilities";
 import { DEFAULT_PANEL_HEIGHT, DEFAULT_PANEL_MIN_HEIGHT, DEFAULT_PANEL_WIDTH, PANEL_HEADER_HEIGHT } from "../constants";
-import { type BaseProps as OrigBaseProps, Side } from "./types";
+import { type BaseProps, Side } from "./types";
 import { resizers } from "./utils";
 import "./PanelTabsBase.scss";
-import React from "react";
 
 const distance = (x1: number, x2: number, y1: number, y2: number) => {
   return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 };
 
-const TABS_ROW_HEIGHT = 33; // px, should match your CSS
-const MIN_HEIGHT = 100;
-const MAX_HEIGHT = 800;
-
-interface BasePropsWithChildren extends OrigBaseProps {
-  children?: ReactNode;
-  isBottomPanel?: boolean;
-  contentRef?: React.RefObject<HTMLDivElement>;
-}
-
-export const PanelTabsBase: FC<BasePropsWithChildren> = ({
+export const PanelTabsBase: FC<BaseProps> = ({
   name: key,
   root,
   width,
@@ -70,9 +50,6 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
   dragTop,
   dragBottom,
   lockPanelContents,
-  isBottomPanel,
-  contentRef,
-  ...props
 }) => {
   const headerRef = useRef<HTMLDivElement>();
   const panelRef = useRef<HTMLDivElement>();
@@ -95,16 +72,6 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
   const isChildOfGroup = attachedKeys && attachedKeys.includes(key) && attachedKeys[0] !== key;
   const collapsedHeader = !(collapsed && !isParentOfCollapsedPanel);
   const tooltipText = visible && !collapsed ? "Collapse" : "Expand";
-  const settings = props.currentEntity?.store?.settings || props.currentEntity?.settings;
-  const [bottomCollapsed, setBottomCollapsed] = useState(() => {
-    if (isBottomPanel && settings?.defaultCollapsedBottomPanel) return true;
-    return false;
-  });
-  const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT);
-  const dragging = useRef(false);
-  const startY = useRef(0);
-  const startHeight = useRef(0);
-  const collapsibleBottomPanel = settings?.collapsibleBottomPanel ?? false;
 
   handlers.current = {
     onResize,
@@ -119,20 +86,6 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
   keyRef.current = key;
 
   const style = useMemo(() => {
-    // If bottom panel and collapsed, only show tabs row
-    if (isBottomPanel && bottomCollapsed) {
-      return {
-        height: `${TABS_ROW_HEIGHT}px`,
-        zIndex,
-        borderTop: "1px solid var(--color-neutral-border)",
-      };
-    }
-    if (isBottomPanel && collapsibleBottomPanel) {
-      return {
-        height: `${panelHeight}px`,
-        zIndex,
-      };
-    }
     const dynamicStyle = visible
       ? {
           height: locked ? DEFAULT_PANEL_HEIGHT : collapsed ? "100%" : (height ?? "100%"),
@@ -147,28 +100,7 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
       ...dynamicStyle,
       zIndex,
     };
-  }, [
-    width,
-    height,
-    visible,
-    locked,
-    collapsed,
-    zIndex,
-    isBottomPanel,
-    bottomCollapsed,
-    collapsibleBottomPanel,
-    panelHeight,
-  ]);
-
-  useEffect(() => {
-    if (contentRef?.current) {
-      if (isBottomPanel && bottomCollapsed) {
-        contentRef.current.style.height = `calc(100% - ${TABS_ROW_HEIGHT}px)`;
-      } else if (isBottomPanel && collapsibleBottomPanel) {
-        contentRef.current.style.height = `calc(100% - ${panelHeight}px)`;
-      }
-    }
-  }, [panelHeight, isBottomPanel, bottomCollapsed, collapsibleBottomPanel]);
+  }, [width, height, visible, locked, collapsed, zIndex]);
 
   const coordinates = useMemo(() => {
     return detached && !locked
@@ -351,48 +283,8 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
     [onVisibilityChange, key, visible],
   );
 
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      const deltaY = startY.current - e.clientY;
-      const newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, startHeight.current + deltaY));
-      setPanelHeight(newHeight);
-    };
-    const onMouseUp = () => {
-      dragging.current = false;
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, []);
-
-  const handleDividerDoubleClick = () => {
-    setPanelHeight(DEFAULT_PANEL_HEIGHT);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragging.current = true;
-    startY.current = e.clientY;
-    startHeight.current = panelHeight;
-  };
-
   return (
     <Block ref={panelRef} name="tabs-panel" mod={mods} style={{ ...style, ...coordinates }}>
-      {isBottomPanel && collapsibleBottomPanel && !bottomCollapsed && (
-        <div
-          className="w-full h-2 absolute -top-2 left-0 cursor-row-resize bg-neutral-emphasis hover:bg-primary-border active:bg-primary-border transition-colors duration-100 select-none z-10"
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDividerDoubleClick}
-          role="separator"
-          aria-orientation="horizontal"
-          tabIndex={-1}
-        />
-      )}
       <Elem name="content">
         {!locked && collapsedHeader && (
           <>
@@ -445,18 +337,7 @@ export const PanelTabsBase: FC<BasePropsWithChildren> = ({
         {visible && !collapsed && (
           <Elem name="body">
             {lockPanelContents && <Elem name="shield" />}
-            {(() => {
-              const onlyChild = React.Children.only(children);
-              if (React.isValidElement(onlyChild) && (onlyChild.type as any).displayName === "Tabs") {
-                return React.cloneElement(onlyChild, {
-                  isBottomPanel: isBottomPanel as boolean,
-                  bottomCollapsed,
-                  setBottomCollapsed,
-                  settings,
-                } as Partial<typeof onlyChild.props>);
-              }
-              return children;
-            })()}
+            {children}
           </Elem>
         )}
       </Elem>

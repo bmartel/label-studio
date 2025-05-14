@@ -75,17 +75,14 @@ const SideTabsPanelsComponent: FC<SidePanelsProps> = ({
   const [breakPointActiveTab, setBreakPointActiveTab] = useState(0);
   const localSnap = useRef(snap);
   const collapsedSideRef = useRef(collapsedSide);
-  const settings = currentEntity?.store?.settings || currentEntity?.settings;
-  const contentRef = useRef<HTMLDivElement>(null);
 
   collapsedSideRef.current = collapsedSide;
   localSnap.current = snap;
   useRegionsCopyPaste(currentEntity);
 
   const panelBreakPoint = useMemo(() => {
-    if (settings?.forceBottomPanel) return true;
     return viewportSizeMatch || screenSizeMatch.matches;
-  }, [viewportSizeMatch, screenSizeMatch.matches, settings?.forceBottomPanel]);
+  }, [viewportSizeMatch, screenSizeMatch.matches]);
 
   const updatePanel = useCallback(
     (name: string, patch: Partial<PanelBBox>) => {
@@ -268,7 +265,6 @@ const SideTabsPanelsComponent: FC<SidePanelsProps> = ({
           maxHeight,
           alignment: setDetached ? undefined : panel.alignment,
         });
-        setSnap(undefined);
       });
     },
     [updatePanel, checkSnap, panelData, positioning],
@@ -505,7 +501,6 @@ const SideTabsPanelsComponent: FC<SidePanelsProps> = ({
         viewportSize.current.height = clientHeight ?? 0;
         setViewportSizeMatch(checkContentFit());
         setPanelMaxWidth(rootRef.current.clientWidth * 0.4);
-        setSnap(undefined);
       });
     });
 
@@ -555,13 +550,13 @@ const SideTabsPanelsComponent: FC<SidePanelsProps> = ({
       >
         {initialized && (
           <>
-            <Elem ref={contentRef} name="content" mod={{ resizing: lockPanelContents || positioning }}>
+            <Elem name="content" mod={{ resizing: lockPanelContents || positioning }}>
               {children}
             </Elem>
             {panelsHidden !== true && panelBreakPoint ? (
               <>
                 <Elem name="wrapper">
-                  <PanelTabsBase {...emptyBaseProps} contentRef={contentRef} isBottomPanel={true}>
+                  <PanelTabsBase {...emptyBaseProps}>
                     <Tabs {...emptyBaseProps} />
                   </PanelTabsBase>
                 </Elem>
