@@ -37,15 +37,23 @@ jobs:
           node-version: "${{ env.NODE }}"
           directory: "${{ env.FRONTEND_MONOREPO_DIR }}"
 
-      - name: Build editor
-        uses: ./.github/actions/build-frontend
-        with:
-          head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
+      - name: Run LSF server
+        id: run-lsf-server
+        timeout-minutes: 2
+        working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}
+        env:
+          NODE_ENV: production
+          BUILD_NO_MINIMIZATION: true
+        run: |
+          set -xeuo pipefail
 
-      - name: Serve built editor
-        uses: ./.github/actions/serve-frontend
-        with:
-          directory: ${{ env.FRONTEND_MONOREPO_DIR }}/dist/libs/editor
+          yarn lsf:serve &
+          pid=$!
+          echo "pid=${pid}" >> $GITHUB_OUTPUT
+          while ! curl -s -o /dev/null -L "http://localhost:3000"; do
+            echo "=> Waiting for service to become available"
+            sleep 2s
+          done
 
       - name: Run tests
         working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}
@@ -53,6 +61,12 @@ jobs:
           HEADLESS: true
         run: |
           yarn test:integration --parallel
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration output
+          path: "dist/cypress/libs/frontend-test/src"
 
       - name: Kill server
         if: always()
