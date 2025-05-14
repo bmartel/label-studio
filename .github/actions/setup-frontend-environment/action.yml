@@ -23,6 +23,7 @@ runs:
 
     - name: Install yarn dependencies
       working-directory: "${{ inputs.directory }}"
+      shell: 'bash'
       run: |
         yarn install --frozen-lockfile --prefer-offline --network-timeout 300000
 
