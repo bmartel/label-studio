@@ -124,6 +124,11 @@ jobs:
     if: needs.changed_files.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.event.after }}
+          fetch-depth: 0
       - uses: ./.github/actions/setup-frontend-environment
         with:
           head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
@@ -134,6 +139,11 @@ jobs:
       - install-frontend
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.event.after }}
+          fetch-depth: 0
       - uses: ./.github/actions/build-frontend
         with:
           head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
