@@ -44,6 +44,8 @@ runs:
           ${{ inputs.directory }}/node_modules
           ${{ inputs.directory }}/.yarn/cache
           ${{ inputs.directory }}/.yarn/unplugged
+          /home/runner/.cache/Cypress
+          ${{ inputs.directory }}/.cypress-cache
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-node-${{ inputs.node-version }}-
