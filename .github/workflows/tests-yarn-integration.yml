@@ -39,13 +39,9 @@ jobs:
           directory: "${{ env.FRONTEND_MONOREPO_DIR }}"
 
       - name: Build editor
-        working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}
-        env:
-          NODE_ENV: production
-          BUILD_NO_MINIMIZATION: true
-          NX_VERBOSE_LOGGING: true
-        run: |
-          yarn nx run editor:build:production --parallel=3
+        uses: ./.github/actions/build-frontend
+        with:
+          head_sha: ${{ github.event.pull_request.head.sha || github.event.after }}
 
       - name: Serve built editor
         uses: ./.github/actions/serve-frontend
