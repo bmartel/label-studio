@@ -35,7 +35,7 @@ module.exports.config = {
       trace: false,
       keepTraceForPassedTests: false,
       launchOptions: {
-        args: ['--disable-dev-shm-usage', '--no-sandbox'],
+        args: ["--disable-dev-shm-usage", "--no-sandbox"],
       },
       contextOptions: {
         viewport: { width: 1200, height: 900 },
