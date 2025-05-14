@@ -53,10 +53,3 @@ runs:
         BUILD_MODULE: true
       run: |
         yarn nx run editor:build:production
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: lsf-build
-        path: ${{ inputs.directory }}/dist/libs/editor
-        retention-days: 7
