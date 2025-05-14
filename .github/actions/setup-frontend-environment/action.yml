@@ -21,14 +21,6 @@ runs:
         cache: 'yarn'
         cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
 
-    - name: Cache central npm modules
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/yarn
-        key: ${{ runner.os }}-node-${{ github.ref }}-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ github.ref }}-${{ hashFiles('**/yarn.lock') }}
-
     # we use the exact restore key to avoid Cypress binary snowballing
     # https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
     - name: Cache Cypress binary
@@ -38,15 +30,6 @@ runs:
         key: cypress-${{ runner.os }}-cypress-${{ github.ref }}-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           cypress-${{ runner.os }}-cypress-${{ github.ref }}-${{ hashFiles('**/yarn.lock') }}
-
-    # Cache local node_modules to pass to testing jobs
-    - name: Cache local node_modules
-      uses: actions/cache@v4
-      with:
-        path: ${{ inputs.directory }}/node_modules
-        key: ${{ runner.os }}-node-modules-${{ github.ref }}-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-node-modules-${{ github.ref }}-
 
     - name: Install yarn dependencies
       working-directory: "${{ inputs.directory }}"
