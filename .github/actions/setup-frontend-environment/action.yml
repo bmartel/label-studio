@@ -6,10 +6,6 @@ inputs:
     description: node version
     default: "22"
     required: false
-  yarn-version:
-    description: yarn version
-    default: "1.22"
-    required: false
   directory:
     description: frontend directory
     default: "web"
@@ -25,34 +21,8 @@ runs:
         cache: 'yarn'
         cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
 
-    - name: Upgrade Yarn
-      env:
-        VERSION: "${{ inputs.yarn-version }}"
-      shell: bash
-      run: npm install -g "yarn@${VERSION}"
-
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
-      shell: bash
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-
-    - name: Configure yarn cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          ${{ inputs.directory }}/node_modules
-          ${{ inputs.directory }}/.yarn/cache
-          ${{ inputs.directory }}/.yarn/unplugged
-          /home/runner/.cache/Cypress
-          ${{ inputs.directory }}/.cypress-cache
-        key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ inputs.node-version }}-
-
     - name: Install yarn dependencies
       working-directory: "${{ inputs.directory }}"
-      shell: bash
       run: |
         yarn install --frozen-lockfile --prefer-offline --network-timeout 300000
 
