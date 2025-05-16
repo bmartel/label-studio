@@ -8,7 +8,7 @@ on:
         type: string
 
 env:
-  NODE: "18"
+  NODE: "22"
   FRONTEND_MONOREPO_DIR: "web"
 
 jobs:
@@ -37,16 +37,6 @@ jobs:
           node-version: "${{ env.NODE }}"
           directory: "${{ env.FRONTEND_MONOREPO_DIR }}"
 
-      - name: Install e2e dependencies
-        working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}/libs/editor/tests/e2e
-        run: yarn install
-
-      - name: Run LSO server
-        id: run-lso-server
-        run: |
-          container_id=$(docker run --rm -d -p 8080:8080 heartexlabs/label-studio:develop)
-          echo "container_id=${container_id}" >> $GITHUB_OUTPUT
-
       - name: Run LSF server
         id: run-lsf-server
         timeout-minutes: 2
@@ -60,18 +50,21 @@ jobs:
           yarn lsf:serve &
           pid=$!
           echo "pid=${pid}" >> $GITHUB_OUTPUT
-
           while ! curl -s -o /dev/null -L "http://localhost:3000"; do
             echo "=> Waiting for service to become available"
             sleep 2s
           done
+
+      - name: Install e2e dependencies
+        working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}/libs/editor/tests/e2e
+        run: yarn install --frozen-lockfile --prefer-offline
 
       - name: Run tests
         working-directory: ${{ env.FRONTEND_MONOREPO_DIR }}
         env:
           HEADLESS: true
         run: |
-          yarn test:e2e
+          yarn lsf:e2e:ci
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -79,12 +72,7 @@ jobs:
           name: e2e output
           path: "web/libs/editor/tests/e2e/output"
 
-      - name: Kill LSO server
-        if: always()
-        continue-on-error: true
-        run: docker rm -f "${{ steps.run-lso-server.outputs.container_id }}"
-
-      - name: Kill LSF server
+      - name: Kill server
         if: always()
         continue-on-error: true
         run: kill -9 "${{ steps.run-lsf-server.outputs.pid }}"

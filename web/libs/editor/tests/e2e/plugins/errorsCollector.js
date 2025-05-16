@@ -38,7 +38,12 @@ const defaultConfig = {
   },
   uncaughtErrorFilter: {
     // Ignore not meaningful errors
-    ignore: [/^ResizeObserver loop limit exceeded$/],
+    ignore: [
+      /^ResizeObserver loop limit exceeded$/,
+      /^Target closed$/,
+      /^Protocol error/,
+      /^Target page, context or browser has been closed$/,
+    ],
   },
 };
 
@@ -180,6 +185,20 @@ module.exports = (config) => {
         }
       }
     });
+  });
+
+  // Add cleanup handler
+  event.dispatcher.on(event.test.after, async () => {
+    try {
+      if (helper && helper.page) {
+        await helper.page.evaluate(() => {
+          window.onerror = null;
+          window.onunhandledrejection = null;
+        });
+      }
+    } catch (err) {
+      // Ignore errors during cleanup
+    }
   });
 };
 

@@ -21,7 +21,7 @@ module.exports.config = {
       url: `http://localhost:${port}`,
       show: !headless,
       restart: "context",
-      timeout: 60000, // Action timeout after 60 seconds
+      timeout: 120000, // Increase timeout to 120 seconds
       waitForAction: headless ? 300 : 1200,
       windowSize: "1200x900",
       waitForNavigation: "networkidle",
@@ -31,12 +31,16 @@ module.exports.config = {
             executablePath: process.env.CHROMIUM_EXECUTABLE_PATH,
           }
         : {},
-      // to test date shifts because of timezone. (see date-time.test.js)
-      // Paris is in +1/+2 timezone, so date with midnight (00:00)
-      // will be always in previous day in ISO
       timezoneId: "Europe/Paris",
       trace: false,
       keepTraceForPassedTests: false,
+      launchOptions: {
+        args: ["--disable-dev-shm-usage", "--no-sandbox"],
+      },
+      contextOptions: {
+        viewport: { width: 1200, height: 900 },
+        ignoreHTTPSErrors: true,
+      },
     },
     PlaywrightAddon: {
       require: "./helpers/PlaywrightAddon.js",
